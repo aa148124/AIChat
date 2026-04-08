@@ -1,0 +1,52 @@
+.row {
+  display: flex;
+  margin-bottom: 12px;
+}
+
+.userRow {
+  justify-content: flex-end;
+}
+
+.assistantRow {
+  justify-content: flex-start;
+}
+
+.bubble {
+  max-width: min(80%, 760px);
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.userBubble {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #ffffff;
+}
+
+.assistantBubble {
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+}
+
+.text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.markdown {
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.markdown pre {
+  overflow-x: auto;
+  background: #0f172a;
+  color: #f8fafc;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.markdown code {
+  font-family: "Cascadia Code", Consolas, monospace;
+}

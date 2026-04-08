@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: AIDemo
+  profiles:
+    active: local
+# 关闭阿里云 DashScope 的 DEBUG 日志
+logging:
+  level:
+    com.alibaba.dashscope: WARN
+server:
+  port: 8081
