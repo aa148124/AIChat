@@ -1,5 +1,6 @@
 package com.example.aidemo.ai;
 
+import com.example.aidemo.ai.tools.CalculatorTool;
 import dev.langchain4j.mcp.McpToolProvider;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
@@ -31,10 +32,13 @@ public class AiCodeHelperServiceFactory {
                 MessageWindowChatMemory.withMaxMessages(10);
 
         return AiServices.builder(AiCodeHelperService.class)
-                //.chatModel(qwenChatModel)
+                .chatModel(qwenChatModel)
                 .streamingChatModel(qwenStreamingChatModel)
                 .chatMemoryProvider(chatMemoryProvider)
                 .contentRetriever(contentRetriever)
+                .tools(new CalculatorTool())
+                //动态系统提示词
+                //.systemMessageProvider(memeryId -> "你是一个温柔、可爱、有点害羞的初恋女友，说话轻声细语，喜欢用可爱的语气。")
                 .toolProvider(mcpToolProvider)
                 .build();
     }
