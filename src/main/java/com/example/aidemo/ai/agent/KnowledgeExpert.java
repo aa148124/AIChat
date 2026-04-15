@@ -10,6 +10,6 @@ import reactor.core.publisher.Flux;
  */
 public interface KnowledgeExpert {
     
-    @SystemMessage("你是一个专业的技术知识库助手，擅长根据检索到的文档内容回答用户问题。回答时请引用相关知识来源。")
+    @SystemMessage(fromResource = "system-message.txt")
     Flux<String> answer(@MemoryId String memoryId, @UserMessage String question);
 }

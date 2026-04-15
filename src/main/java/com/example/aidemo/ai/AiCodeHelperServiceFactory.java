@@ -1,9 +1,10 @@
 package com.example.aidemo.ai;
 
+import com.example.aidemo.ai.memory.MySqlChatMemory;
+import com.example.aidemo.ai.memory.MySqlChatMemoryStore;
 import com.example.aidemo.ai.tools.CalculatorTool;
 import dev.langchain4j.mcp.McpToolProvider;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
-import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
@@ -24,12 +25,14 @@ public class AiCodeHelperServiceFactory {
     private ContentRetriever contentRetriever;
     @Resource
     private McpToolProvider mcpToolProvider;
+    @Resource
+    private MySqlChatMemoryStore mySqlChatMemoryStore;
 
     @Bean
     public AiCodeHelperService aiCodeHelperService() {
-        //会话记忆 - 使用 ChatMemoryProvider 支持多会话
+        //会话记忆 - 使用MySQL持久化
         ChatMemoryProvider chatMemoryProvider = memoryId -> 
-                MessageWindowChatMemory.withMaxMessages(10);
+                MySqlChatMemory.create(memoryId, mySqlChatMemoryStore);
 
         return AiServices.builder(AiCodeHelperService.class)
                 .chatModel(qwenChatModel)

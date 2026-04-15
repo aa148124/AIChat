@@ -1,11 +1,9 @@
 package com.example.aidemo.ai.agent;
 
-import com.example.aidemo.ai.agent.GeneralAssistant;
-import com.example.aidemo.ai.agent.IntentAnalyzer;
-import com.example.aidemo.ai.agent.KnowledgeExpert;
+import com.example.aidemo.ai.memory.MySqlChatMemory;
+import com.example.aidemo.ai.memory.MySqlChatMemoryStore;
 import com.example.aidemo.ai.tools.CalculatorTool;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
-import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
@@ -28,6 +26,9 @@ public class AgentFactory {
     
     @Resource
     private ContentRetriever contentRetriever;
+    
+    @Resource
+    private MySqlChatMemoryStore mySqlChatMemoryStore;
 
     @Bean
     public IntentAnalyzer intentAnalyzer() {
@@ -39,7 +40,7 @@ public class AgentFactory {
     @Bean
     public KnowledgeExpert knowledgeExpert() {
         ChatMemoryProvider chatMemoryProvider = memoryId -> 
-                MessageWindowChatMemory.withMaxMessages(10);
+                MySqlChatMemory.create(memoryId, mySqlChatMemoryStore);
                 
         return AiServices.builder(KnowledgeExpert.class)
                 .chatModel(qwenChatModel)
@@ -52,7 +53,7 @@ public class AgentFactory {
     @Bean
     public GeneralAssistant generalAssistant() {
         ChatMemoryProvider chatMemoryProvider = memoryId -> 
-                MessageWindowChatMemory.withMaxMessages(10);
+                MySqlChatMemory.create(memoryId, mySqlChatMemoryStore);
                 
         return AiServices.builder(GeneralAssistant.class)
                 .chatModel(qwenChatModel)
