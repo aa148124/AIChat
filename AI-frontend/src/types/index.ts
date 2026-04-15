@@ -1,3 +1,5 @@
+export type ChatMode = "standard" | "agent" | "ollama";
+
 export interface Session {
   memoryId: string;
   name: string;

@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Message, MessageMap, Session } from "../types";
-import { streamChatMessage } from "../utils/sse";
+import type { ChatMode, Message, MessageMap, Session } from "../types";
+import { streamAgentChat, streamChatMessage, streamOllamaChat } from "../utils/sse";
+import { getOrCreateUserId } from "../utils/userId";
 
 const STORAGE_KEYS = {
   sessions: "chat:sessions",
   messages: "chat:messages",
-  activeMemoryId: "chat:activeMemoryId"
+  activeMemoryId: "chat:activeMemoryId",
+  chatMode: "chat:mode"
 };
 
 function uuid(): string {
@@ -37,12 +39,22 @@ function parseLocalStorage<T>(key: string, fallback: T): T {
   }
 }
 
+function parseChatMode(raw: string | null): ChatMode {
+  if (raw === "agent" || raw === "standard" || raw === "ollama") {
+    return raw;
+  }
+  return "standard";
+}
+
 export function useChat() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [messagesBySession, setMessagesBySession] = useState<MessageMap>({});
   const [activeMemoryId, setActiveMemoryId] = useState<string>("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string>("");
+  const [chatMode, setChatMode] = useState<ChatMode>(() =>
+    parseChatMode(localStorage.getItem(STORAGE_KEYS.chatMode))
+  );
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -76,6 +88,10 @@ export function useChat() {
       localStorage.setItem(STORAGE_KEYS.activeMemoryId, activeMemoryId);
     }
   }, [activeMemoryId]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.chatMode, chatMode);
+  }, [chatMode]);
 
   useEffect(() => {
     return () => {
@@ -169,47 +185,50 @@ export function useChat() {
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    try {
-      await streamChatMessage(
-        memoryId,
-        trimmed,
-        {
-          onData: (chunk) => {
-            setMessagesBySession((prev) => {
-              const list = prev[memoryId] ?? [];
-              const next = [...list];
-              const idx = next.findIndex((item) => item.id === assistantMessage.id);
-              if (idx === -1) {
-                return prev;
-              }
-              next[idx] = { ...next[idx], content: next[idx].content + chunk };
-              return { ...prev, [memoryId]: next };
-            });
-          },
-          onComplete: () => {
-            setIsStreaming(false);
-            setMessagesBySession((prev) => {
-              const list = prev[memoryId] ?? [];
-              const last = list[list.length - 1];
-              setSessions((sessionPrev) =>
-                sessionPrev
-                  .map((session) =>
-                    session.memoryId === memoryId
-                      ? { ...session, lastMessage: last?.content || session.lastMessage, timestamp: now() }
-                      : session
-                  )
-                  .sort((a, b) => b.timestamp - a.timestamp)
-              );
-              return prev;
-            });
-          },
-          onError: (streamError) => {
-            setIsStreaming(false);
-            setError(streamError.message || "SSE stream failed.");
+    const streamHandlers = {
+      onData: (chunk: string) => {
+        setMessagesBySession((prev) => {
+          const list = prev[memoryId] ?? [];
+          const next = [...list];
+          const idx = next.findIndex((item) => item.id === assistantMessage.id);
+          if (idx === -1) {
+            return prev;
           }
-        },
-        controller.signal
-      );
+          next[idx] = { ...next[idx], content: next[idx].content + chunk };
+          return { ...prev, [memoryId]: next };
+        });
+      },
+      onComplete: () => {
+        setIsStreaming(false);
+        setMessagesBySession((prev) => {
+          const list = prev[memoryId] ?? [];
+          const last = list[list.length - 1];
+          setSessions((sessionPrev) =>
+            sessionPrev
+              .map((session) =>
+                session.memoryId === memoryId
+                  ? { ...session, lastMessage: last?.content || session.lastMessage, timestamp: now() }
+                  : session
+              )
+              .sort((a, b) => b.timestamp - a.timestamp)
+          );
+          return prev;
+        });
+      },
+      onError: (streamError: Error) => {
+        setIsStreaming(false);
+        setError(streamError.message || "SSE stream failed.");
+      }
+    };
+
+    try {
+      if (chatMode === "agent") {
+        await streamAgentChat(getOrCreateUserId(), trimmed, streamHandlers, controller.signal);
+      } else if (chatMode === "ollama") {
+        await streamOllamaChat(memoryId, trimmed, streamHandlers, controller.signal);
+      } else {
+        await streamChatMessage(memoryId, trimmed, streamHandlers, controller.signal);
+      }
     } catch (requestError) {
       setIsStreaming(false);
       setError(requestError instanceof Error ? requestError.message : "Request failed.");
@@ -224,6 +243,8 @@ export function useChat() {
     activeMessages,
     isStreaming,
     error,
+    chatMode,
+    setChatMode,
     createSession,
     switchSession,
     sendMessage,

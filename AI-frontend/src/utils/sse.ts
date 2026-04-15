@@ -4,16 +4,11 @@ export interface StreamHandlers {
   onError: (error: Error) => void;
 }
 
-const API_BASE = "/ai/chat";
+const CHAT_PATH = "/ai/chat";
+const AGENT_CHAT_PATH = "/ai/agent/chat";
+const OLLAMA_CHAT_PATH = "/ai/ollama/chat";
 
-export async function streamChatMessage(
-  memoryId: string,
-  message: string,
-  handlers: StreamHandlers,
-  signal?: AbortSignal
-): Promise<void> {
-  const url = `${API_BASE}?memoryId=${encodeURIComponent(memoryId)}&message=${encodeURIComponent(message)}`;
-
+async function streamSseGet(url: string, handlers: StreamHandlers, signal?: AbortSignal): Promise<void> {
   const response = await fetch(url, {
     method: "GET",
     headers: {
@@ -76,4 +71,34 @@ export async function streamChatMessage(
   } finally {
     reader.releaseLock();
   }
+}
+
+export async function streamChatMessage(
+  memoryId: string,
+  message: string,
+  handlers: StreamHandlers,
+  signal?: AbortSignal
+): Promise<void> {
+  const url = `${CHAT_PATH}?memoryId=${encodeURIComponent(memoryId)}&message=${encodeURIComponent(message)}`;
+  return streamSseGet(url, handlers, signal);
+}
+
+export async function streamAgentChat(
+  userId: string,
+  message: string,
+  handlers: StreamHandlers,
+  signal?: AbortSignal
+): Promise<void> {
+  const url = `${AGENT_CHAT_PATH}?userId=${encodeURIComponent(userId)}&message=${encodeURIComponent(message)}`;
+  return streamSseGet(url, handlers, signal);
+}
+
+export async function streamOllamaChat(
+  memoryId: string,
+  message: string,
+  handlers: StreamHandlers,
+  signal?: AbortSignal
+): Promise<void> {
+  const url = `${OLLAMA_CHAT_PATH}?memoryId=${encodeURIComponent(memoryId)}&message=${encodeURIComponent(message)}`;
+  return streamSseGet(url, handlers, signal);
 }

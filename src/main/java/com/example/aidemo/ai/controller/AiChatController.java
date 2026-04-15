@@ -1,6 +1,7 @@
 package com.example.aidemo.ai.controller;
 
 import com.example.aidemo.ai.AiCodeHelperService;
+import com.example.aidemo.ai.OllamaChatService;
 import com.example.aidemo.ai.agent.ChainedAgent;
 import jakarta.annotation.Resource;
 import org.springframework.http.codec.ServerSentEvent;
@@ -19,10 +20,24 @@ public class AiChatController {
     
     @Resource
     private ChainedAgent chainedAgent;
+    
+    @Resource
+    private OllamaChatService ollamaChatService;
 
     @GetMapping("/chat")
     public Flux<ServerSentEvent<String>> chat(@RequestParam("memoryId") String memoryId, @RequestParam("message") String message) {
         return aiCodeHelperService.chatStream(memoryId, message)
+                .map(text -> ServerSentEvent.<String>builder()
+                        .data(text)
+                        .build());
+    }
+
+    /**
+     * Ollama本地模型聊天接口（qwen3-vl:4b）
+     */
+    @GetMapping("/ollama/chat")
+    public Flux<ServerSentEvent<String>> ollamaChat(@RequestParam("memoryId") String memoryId, @RequestParam("message") String message) {
+        return ollamaChatService.chatStream(memoryId, message)
                 .map(text -> ServerSentEvent.<String>builder()
                         .data(text)
                         .build());

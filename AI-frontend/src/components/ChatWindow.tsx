@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { Message } from "../types";
+import type { ChatMode, Message } from "../types";
 import MessageBubble from "./MessageBubble";
 import InputBox from "./InputBox";
 import styles from "./ChatWindow.module.css";
@@ -8,12 +8,23 @@ interface Props {
   messages: Message[];
   isStreaming: boolean;
   error: string;
+  chatMode: ChatMode;
+  onChatModeChange: (mode: ChatMode) => void;
   onSend: (message: string) => Promise<void>;
   onStop: () => void;
   onRetry: () => Promise<void>;
 }
 
-export default function ChatWindow({ messages, isStreaming, error, onSend, onStop, onRetry }: Props) {
+export default function ChatWindow({
+  messages,
+  isStreaming,
+  error,
+  chatMode,
+  onChatModeChange,
+  onSend,
+  onStop,
+  onRetry
+}: Props) {
   const listRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -23,11 +34,28 @@ export default function ChatWindow({ messages, isStreaming, error, onSend, onSto
     });
   }, [messages, isStreaming]);
 
+  const title = chatMode === "agent" ? "Chained Agent" : chatMode === "ollama" ? "Ollama 本地模型" : "AI Assistant";
+
   return (
     <section className={styles.container}>
       <header className={styles.header}>
-        <h2 className={styles.title}>AI Assistant</h2>
-        {isStreaming ? <span className={styles.loading}>AI is typing...</span> : null}
+        <h2 className={styles.title}>{title}</h2>
+        <div className={styles.headerRight}>
+          <label className={styles.modeField}>
+            <span className={styles.modeLabel}>模式</span>
+            <select
+              className={styles.modeSelect}
+              value={chatMode}
+              disabled={isStreaming}
+              onChange={(event) => onChatModeChange(event.target.value as ChatMode)}
+            >
+              <option value="standard">普通对话</option>
+              <option value="agent">链式 Agent</option>
+              <option value="ollama">Ollama 本地模型</option>
+            </select>
+          </label>
+          {isStreaming ? <span className={styles.loading}>AI is typing...</span> : null}
+        </div>
       </header>
 
       <div className={styles.messageList} ref={listRef}>

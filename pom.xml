@@ -88,6 +88,11 @@
             <artifactId>langchain4j-milvus</artifactId>
             <version>${langchain4j.version}</version>
         </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-ollama-spring-boot-starter</artifactId>
+            <version>${langchain4j.version}</version>
+        </dependency>
         
         <!-- Markdown文档处理 -->
         <dependency>

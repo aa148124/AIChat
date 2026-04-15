@@ -10,6 +10,8 @@ export default function App() {
     activeMessages,
     isStreaming,
     error,
+    chatMode,
+    setChatMode,
     createSession,
     switchSession,
     sendMessage,
@@ -31,6 +33,8 @@ export default function App() {
           messages={activeMessages}
           isStreaming={isStreaming}
           error={error}
+          chatMode={chatMode}
+          onChatModeChange={setChatMode}
           onSend={sendMessage}
           onStop={stopStreaming}
           onRetry={retryLast}
